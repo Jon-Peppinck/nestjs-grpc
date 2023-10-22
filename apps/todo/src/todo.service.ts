@@ -1,27 +1,34 @@
 import { Injectable } from '@nestjs/common';
+
 import { Todo, Todos, PostTodoDTO } from 'proto/todo';
+import { PrismaService } from './prisma.service';
+import { Todo as ITodo } from './Todo.model';
 
 @Injectable()
 export class TodoService {
-  private todos: Todo[] = [
-    {
-      id: 1,
-      description: 'first todo',
-      isDone: false,
-    },
-  ];
+  constructor(private prismaService: PrismaService) {}
 
-  postTodo(postTodoDTO: PostTodoDTO): Todo {
-    const todo: Todo = {
-      id: this.todos.length + 1,
-      description: postTodoDTO.description,
-      isDone: postTodoDTO.isDone,
+  async postTodo(postTodoDTO: PostTodoDTO): Promise<Todo> {
+    const todo: ITodo = await this.prismaService.todo.create({
+      data: postTodoDTO,
+    });
+
+    return {
+      id: todo.id,
+      description: todo.description,
+      isDone: todo.isDone,
     };
-    this.todos.push(todo);
-    return todo;
   }
 
-  getTodos(): Todos {
-    return { Todos: this.todos };
+  async getTodos(): Promise<Todos> {
+    const todos: ITodo[] = await this.prismaService.todo.findMany();
+
+    return {
+      Todos: todos.map((t) => ({
+        id: t.id,
+        description: t.description,
+        isDone: t.isDone,
+      })),
+    };
   }
 }
